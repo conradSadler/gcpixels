@@ -661,26 +661,3 @@ io.on('connection', (socket) =>
 module.exports = server.listen(process.env.PORT || 8080, () => {
   console.log("listening on: "+ process.env.PORT || 8080);
 });
-/**
- * gcloud run deploy pixels769 \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080 \
-  --memory 1Gi \
-  --cpu 1 \
-  --min-instances 1 \
-  --max-instances 4 \
-  --concurrency 1000 \
-  --timeout 3600 \
-  --execution-environment gen2 \
-  --add-cloudsql-instances pixels769:us-central1:pixels-db \
-  --set-env-vars NODE_ENV=production \
-  --set-env-vars POSTGRES_HOST=/cloudsql/pixels769:us-central1:pixels-db \
-  --set-env-vars POSTGRES_USER=pixels_user \
-  --set-env-vars POSTGRES_DB=users_db \
-  --set-env-vars POSTGRES_PORT=5432 \
-  --set-env-vars PORT=8080 \
-  --set-secrets POSTGRES_PASSWORD=db-password:latest \
-  --set-secrets SESSION_SECRET=session-secret:latest
- */
