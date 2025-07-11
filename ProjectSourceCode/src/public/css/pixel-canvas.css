@@ -1,0 +1,91 @@
+.controls {
+    margin-bottom: 20px;
+}
+
+body {
+    background-color: #222;
+    color: #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  button {
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: #5822d4;
+    color: rgb(255, 255, 255);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #9071d8;
+}
+
+.artwork-link {
+    background-color: Transparent;
+    background-repeat:no-repeat;
+    border: none;
+    color: blue;
+    cursor:pointer;
+    overflow: hidden;
+    outline:none;
+}
+
+.artwork-link:hover {
+    background-color: Transparent;
+}
+
+.canvas-container {
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.pixel-row {
+  display: flex;
+
+}
+
+.pixel {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.palette-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .palette-row {
+    display: flex;
+    flex-direction: row;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .palette {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.1s;
+  }
+
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('/css/PressStart2P-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  

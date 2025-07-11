@@ -1,0 +1,9 @@
+<div id="canvas-container" class="canvas-container">
+    {{#each rows}}
+        <div class="pixel-row">
+            {{#each this}}
+                <div class="pixel" data-row="{{@../index}}" data-col="{{@index}}"></div>
+            {{/each}}
+        </div>
+    {{/each}}
+</div>

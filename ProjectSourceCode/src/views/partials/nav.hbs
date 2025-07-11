@@ -1,0 +1,86 @@
+<header>
+   <link rel="stylesheet" href="/css/pixel-canvas.css">
+   <style>
+    .navbar, .nav-link {
+      font-family: 'Press Start 2P', sans-serif !important;
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+
+    #roomArea {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      ::placeholder {
+        color: black;
+      }
+    }
+    .brand-name {
+      font-weight: bold;
+      font-size: 2rem;
+      margin-right: 20px;
+      color: white;
+    }
+    
+    .dropdown-menu {
+      min-width: 10rem;
+    }
+   </style>
+   <div id="header">
+      <nav class="navbar navbar-expand-md navbar-dark" style="background-color: #2A2A2A;">
+        <!-- Left Side - Brand Name -->
+        <a href="/homeCanvas" class="navbar-brand">
+          <span class="brand-name">PIXELS</span>
+        </a>
+        
+        <!-- Center Content -->
+        <div class="navbar-collapse order-md-1">
+          <ul class="navbar-nav me-auto">
+            {{!-- <li class="nav-item">
+              <a class="nav-link btn btn-outline-light border-white" href="/globalGallery" style="color: rgb(255, 255, 255);">Global Gallery</a>
+            </li> --}}
+          </ul>
+          
+          <!-- Room Join Form -->
+          <form method="post" action="/canvas" class="form-inline" id="roomForm">
+            <div class="form-group" id="roomArea">
+              <label for="roomInput" class="form-label" style="color: rgb(255, 255, 255)">Join Canvas:</label>
+              <input type="text" name="roomInput" class="form-control form-control-sm" placeholder="#..." id="roomInput">
+              <input name="artwork_id" type="hidden" value="{{-3}}">
+              <button type="submit" class="btn-sm">Join</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Right Side - Dropdown Menu -->
+        {{#if username}}
+        <div class="navbar-collapse order-md-2">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white;">
+                {{username}}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/private_gallery">Private Gallery</a></li>
+                <li><a class="dropdown-item" href="/logout">Logout</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        {{else}}
+         <div class="navbar-collapse order-md-2">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white;">
+                Login
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/login">Login</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        {{/if}}
+      </nav>
+   </div>
+</header>

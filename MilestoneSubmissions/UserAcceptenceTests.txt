@@ -1,0 +1,71 @@
+GOOGLE DOCS LINK TO PAGE:
+
+https://docs.google.com/document/d/1mJZD2j8MRsV9ek5-_KUNFMMxBRpFA1Cle04wPdsPaS0/edit?usp=sharing
+
+UAT For Exclusive Canvas:
+
+-This test will be conducted on a localhost test environment with multiple artists being simulated by multiple tabs.
+
+-The artist should be able to enter the room code and be redirected to the canvas page where they can collaborate with their friends. 
+ This will be tested by sending a console.log message saying that an artist entered the new room.
+
+-The artist will be able to watch the canvas being updated in real-time without personally updating the canvas. 
+ This will be tested by visually watching the screen update as another artist colors the canvas. Additionally, when the artist enters the room, a console.log message will be sent stating “artist is updated”.
+
+-As the only artist in an exclusive canvas the artist will be able to change the canvas and then proceed to leave the shared canvas without losing their change.
+ The artist will enter the shared canvas, and then they will change a central pixel to a different color and then leave the shared canvas by switching to another shared canvas. 
+ This will be tested by navigating to their private gallery where they will click on the name of the recently saved canvas. 
+ Once they have been redirected to /pixel-art, they should see their recent changes.
+
+-The artist acceptance tester will be an artist who wants to save their artwork the proper way. 
+ In order to do this the artist will first click the save art button without adding a name to the canvas. 
+ This action should be responded to with an alert which tells the artist to name their artwork before saving. 
+ Once the artist has named their artwork, they should be able to again click the save button and this time an alert will appear telling the artist that their artwork has been saved. 
+ Then the artist will navigate to their private gallery and observe that their newly created artwork with a small image is present.
+
+UAT For New Canvas Button:
+
+-This test will be conducted on a localhost test environment with one artist being simulated by one tab
+
+
+-The artist after clicking the publish button should be redirected to the pixel-art page where a blank canvas with color palette will be displayed. 
+ This will be conducted by a console.log statement that prints the page where the artist was redirected.
+
+-The artist should be able to click on any pixel in the canvas and it should change color. 
+ When the artist clicks on the up most pixel a client side console.log message will appear with the position and color of the newly colored pixel.
+
+-The artist should be able to add colors to the palette and then switch to another color by clicking on the color selector. 
+ They then will color a pixel with the color they selected on the color selector. 
+ Then they will click on the color they added to the palette. 
+ Afterwards they should be able to color another pixel the color they saved to the palette.
+
+UAT For artist Session:
+
+-This test will be conducted on a localhost test environment with one artist being simulated by one tab
+
+-When an artist is not logged in, if they try to enter an exclusive canvas with a code, they should be redirected to the login page. 
+ This will be done by trying to render the exclusive canvas page by sending a post request with an associated exclusive canvas code. 
+ Then the post request should perform validation of the artist. After the validation fails, the post request should render the login page.
+
+-When an artist is not logged in, the artist will not be able to log out. 
+ If the artist tries to log out of the application without ever being logged in, the logout API should send the artist to the login page. 
+ The artist will test this by entering the following url ‘http://localhost:3000/logout’.
+
+-When an artist is not logged in, they should be able to get to the register and login page. This implies that when the artist clicks(get request) on the register link under login, the artist should be redirected to the registration page.
+
+UAT for auto upload:
+
+-This test will be conducted on a cloud environment where our application is deployed with multiple artists on desktop computers.
+
+-One artist will login and enter an exclusive canvas named ‘auto’. This artist will then begin coloring the canvas in any way that they 
+ choose. Shortly after another artist will get on the application and login. They will then enter ‘auto’ as the code for the exclusive canvas. 
+ When the new canvas loads, the artist would see the canvas as ‘untitled artwork’. They then should be able to scroll down to see the coloring that the other artist has done.
+
+-Once both artists are on the same canvas, the artist that recently logged in should be able to color the canvas. 
+ Then the artist that started the canvas should be able to name the canvas whatever they want and then proceed to click off of the canvas. 
+ That same artist should then navigate to their private gallery and find the said artwork without a thumbnail(image). 
+ When they click on the name, they should be able to see the saved artwork.
+
+-The artist that recently logged on should also be able to click on the untitled artwork field and name the artwork to what they like. 
+ Then they should be able to click the Pixels logo. After they are directed to the home page, they should navigate to their private canvas where they should find the newly saved artwork without a thumbnail. 
+ After they click on the name of that artwork and are directed to /pixel-art, they should see the name they choose and after they scroll down, they should see the artwork which should be identical to the other artist's artwork.

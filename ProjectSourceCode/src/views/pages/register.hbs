@@ -1,0 +1,99 @@
+{{>message}}
+
+{{!-- Make sure your CSS paths are correct --}}
+<link rel="stylesheet" href="./css/style.css">
+
+{{!-- Add some custom styles to ensure consistent styling with login --}}
+<style>
+  .register-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-left: 80px;
+    padding-right: 80px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-radius: 8px;
+    background-color: #333;
+    margin-top: 50px;
+  }
+
+  .register-title {
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Press Start 2P', cursive;
+  }
+
+  .form-control {
+    background-color: #444;
+    border: 1px solid #555;
+    color: #fff;
+    margin-bottom: 15px;
+  }
+
+  .form-text {
+    color: #aaa !important;
+  }
+
+  a {
+    color: #5822d4;
+  }
+
+  a:hover {
+    color: #9071d8;
+    text-decoration: none;
+  }
+
+  label {
+    color: #fff;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .btn-primary {
+    background-color: #5822d4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 8px 16px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .btn-primary:hover {
+    background-color: #9071d8;
+  }
+</style>
+
+<div class="register-container">
+  <h3 class="register-title">Register</h3>
+
+  <form method="post" action="/register">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" name="username" class="form-control" id="username" aria-describedby="username" required onchange="validateUsername(this.value)">
+      
+      <label for="password">Password</label>
+      <input type="text" name="password" class="form-control" id="password" aria-describedby="password" required>
+
+      <button id="createProfile" type="submit" class="btn-primary mt-3" name="Register" disabled>Create Account</button>
+    </div>
+
+    <div class="mt-3 text-center">
+      <small id="registrationHelp" class="form-text">Already have an account?</small>
+      <a href="/login" class="d-block mt-2">Login Here</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  // This function checks to ensure that the username is valid
+  function validateUsername(username) {
+    if (/^(?!John Doe)[A-Za-z0-9]+$/.test(username)) {
+      document.getElementById("createProfile").disabled = false;
+    } else {
+      document.getElementById("createProfile").disabled = true;
+    }
+  }
+</script>

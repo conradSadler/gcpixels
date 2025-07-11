@@ -1,0 +1,20 @@
+    <footer class="text-center text-muted w-100 mt-auto fixed-bottom">
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // this initializes the websocket
+      var socket = io();
+
+      let roomForm = document.getElementById('roomForm');
+
+      //this event listener will listen for any submit events. Then when an even happens it will get values from input feilds 
+      roomForm.addEventListener('submit', function(e) {
+      if(roomInput.value)
+          {
+              socket.emit('room num', roomInput.value);
+          }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</footer>
+</body>
+</html>

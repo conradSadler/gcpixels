@@ -1,0 +1,39 @@
+{{>message}}
+
+<link rel="stylesheet" href="./css/style.css">
+
+<style>
+  /* Additional styles that work with your existing stylesheet */
+  .button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 100px; /* Space for navbar */
+    min-height: 70vh;
+    gap: 30px;
+  }
+  
+  .large-button {
+    width: 300px;
+    font-size: 24px;
+    padding: 20px 30px;
+    margin: 10px;
+    font-family: 'Press Start 2P', cursive;
+    text-align: center;
+  }
+</style>
+
+{{!-- Your navbar would be here --}}
+
+<div class="button-container">
+  <form class="py-2" action="/load_canvas" method="POST">
+    <input name="new_canvas" type="hidden" value="new_canvas">
+    <button class="large-button" type="submit">New Canvas</button>
+  </form>
+
+  <form action="/private_gallery" method="GET">
+    <input name="private_gallery" type="hidden" value="private_gallery">
+    <button class="large-button" type="submit">My Artwork</button>
+  </form>
+</div>

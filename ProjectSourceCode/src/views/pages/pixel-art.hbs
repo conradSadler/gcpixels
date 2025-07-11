@@ -1,0 +1,71 @@
+<div class="container">
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    .row {
+      font-family: 'Press Start 2P', sans-serif !important;
+      padding-left: 1rem;
+      padding-right: 1rem;
+       button {
+        padding: 8px 16px;
+        margin: 0 5px;
+        background-color: #5822d4;
+        color: rgb(255, 255, 255);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+  </style>
+
+  <div class="row">
+    {{#if canvasNumber}}
+      <div>
+        <label for="roomInput" class="form-label">Exclusive_Canvas: {{canvasNumber}}</label>
+        <input type="hidden" id="roomid" value="{{canvasNumber}}">
+      </div>
+    {{/if}}
+    <div class="col"></div>
+
+    <div class="col">
+      <div class="d-flex flex-column align-items-center">
+        <form class="pb-2">
+        {{!-- {{ The following input has a script that prevents the enter button(keyCode = 13) from being pressed }} --}}
+        {{#if saved_canvas}}
+           <input name="artworkName" id = "theName" value="{{artwork_name}}" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}">
+        {{else}}
+          <input name="artworkName" placeholder="Untitled Artwork" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}">
+        {{/if}}
+        </form>
+
+        <div class="d-flex align-items-center gap-3 pb-2">
+          <button id="clear-btn">Clear Canvas</button>
+          <button id="save-btn" type="submit">Save Art</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col"></div>
+
+  </div>
+  
+  <div class="row">
+
+    <div class="col">
+      {{> palette width=200 rows=paletteRows}}
+      {{> color_picker width=200}}
+    </div>
+
+    <div class="col-md-auto" >
+      {{> pixel-canvas rows=canvasRows}}
+    </div>
+
+    <div class="col"></div>
+
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+  <script type="module" src="/js/palette.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script type="module" src="/js/pixel-canvas.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+
+</div>
