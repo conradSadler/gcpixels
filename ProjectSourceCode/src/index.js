@@ -325,10 +325,10 @@ app.get('/logout', (req, res) => {
   if(req.session.user)
   {
     const PastUser = req.session.user.username;
-    req.session.destroy( (err) => {
+    req.session.destroy( () => {
       res.render('./pages/logout',{Loggedout: PastUser});
       user.username = undefined;  // reseting username feild
-    }).catch((err) => {console.log("Error during logout", err)});
+    })
   }
   else
   {
@@ -440,7 +440,6 @@ app.post("/canvas", async(req, res) => {
     }
 
     //SETTING UP CANVAS
-      console.log('Rendered: /pixel-art');
   
       res.render('./pages/pixel-art', {
       title: 'Pixel Art Creator',
@@ -559,7 +558,6 @@ app.get('/load_canvas', async (req, res) => {
       const result = await db.one(query,[req.session.user.username,req.session.artwork_id]);
       if(result.artwork_id != -1)
         {
-          console.dir(result, {depth: null});
           res.status(200).send(result);
         }
     }
@@ -646,7 +644,7 @@ io.on('connection', (socket) => {
       {
         if(roomName !== socket.id)
         {
-          console.log(`painting in room ${roomName}`, row, col,chosen_color);
+          console.log(`painting in room ${roomName}`);
           if(!rooms.has(roomName))
           {
             const canvasData = [];
