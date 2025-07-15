@@ -32,16 +32,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear button functionality
     const clearBtn = document.getElementById('clear-btn');
-    if (clearBtn) {
+    if (clearBtn) 
+    {
         clearBtn.addEventListener('click', () => {
             artwork_data = [];
-            for (const pixel of pixels) {
+            for (const pixel of pixels) 
+            {
                 pixel.removeAttribute('style');
             }
 
             // Reset canvas data
-            for (let i = 0; i < canvasHeight; i++) {
-                for (let j = 0; j < canvasWidth; j++) {
+            for (let i = 0; i < canvasHeight; i++) 
+                {
+                for (let j = 0; j < canvasWidth; j++) 
+                {
                     canvasData[i][j] = 0;
                 }
             }
@@ -68,19 +72,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if(artName != '')
         {
-            //*******************************************************experimental*********************** */
-            for (let i = 0; i < canvasHeight; i++) {
-                for (let j = 0; j < canvasWidth; j++) {
-                if (canvasData[i][j]) {
-                    artwork_data.push({
-                        position: [j, i],
-                        color: rgbToHex(pixels[j + (i * canvasWidth)].style.backgroundColor)
-                    });
-                }
+            /**
+             * The Following for loops convert the information stored in canvasData 
+             * array and convert it to the data layout which will be stored in the database
+             */
+            for (let i = 0; i < canvasHeight; i++) 
+            {
+                for (let j = 0; j < canvasWidth; j++) 
+                {
+                    if (canvasData[i][j]) 
+                    {
+                        artwork_data.push({
+                            position: [j, i],
+                            color: rgbToHex(pixels[j + (i * canvasWidth)].style.backgroundColor)
+                        });
+                    }
                 }
             }
 
-            //*******************************************************experimental*********************** */
             await axios.post('/save_canvas', {
             name: `${artName}`,
             properties: {
@@ -96,11 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save button functionality
     const saveBtn = document.getElementById('save-btn');
-    if (saveBtn) {
+    if (saveBtn) 
+    {
         saveBtn.addEventListener('click', async() => {
-            console.log("--------------------------------------");
-            console.log(" "+artName+" ");
-            console.log("--------------------------------------");
             if (artName == '')
             {
                 try
@@ -119,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(artName != '')
             {
                 const node = document.getElementById('canvas-container');
-                await htmlToImage.toPng(node, {canvasWidth: 200, canvasHeight: 200})
+                await htmlToImage.toPng(node, {canvasWidth: 200, canvasHeight: 200, quality: .7, pixelRatio: 1})
                 .then((dataURL) => {
                     axios.post('/save_thumbnail', {
                     image: dataURL,
@@ -141,10 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    socket.on('update', function(row, col, chosen_color, pixel) {
+    socket.on('update', function(row, col, chosen_color) {
         const pixels = document.querySelectorAll('.pixel');
-        for (const pixel of pixels) {
-            if (pixel.getAttribute('data-row') == row && pixel.getAttribute('data-col') == col) {
+        for (const pixel of pixels) 
+        {
+            if (pixel.getAttribute('data-row') == row && pixel.getAttribute('data-col') == col) 
+            {
                 pixel.style.backgroundColor = chosen_color;
                 pixel.style.borderColor = chosen_color;
                 canvasData[row][col]= chosen_color;
@@ -153,14 +162,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('update all', function(historyArray) {
-        for (let row = 0; row < historyArray.length; row++) {
-            for (let col = 0; col < historyArray[row].length; col++) {
+        const rowLen = historyArray.length;
+        const colLen = historyArray[0].length;
+        for (let row = 0; row < rowLen; row++) 
+        {
+            for (let col = 0; col < colLen; col++) 
+            {
                 const pixels = document.querySelectorAll('.pixel');
-                for (const pixel of pixels) {
-                    if (pixel.getAttribute('data-row') == row && pixel.getAttribute('data-col') == col) {
-                        pixel.style.backgroundColor = historyArray[row][col];
-                        pixel.style.borderColor = historyArray[row][col];
-                        canvasData[row][col]= historyArray[row][col];
+                for (const pixel of pixels) 
+                {
+                    if (pixel.getAttribute('data-row') == row && pixel.getAttribute('data-col') == col) 
+                    {
+                        const currentPixel = historyArray[row][col];
+                        pixel.style.backgroundColor = currentPixel;
+                        pixel.style.borderColor = currentPixel;
+                        canvasData[row][col]= currentPixel;
                     }
                 }
             }
@@ -168,9 +184,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let inputs = document.getElementsByName("artworkName");
-    for (let i = 0; i < inputs.length; i++) {
-        inputs[i].onkeyup = function () {
-            if (this.value.match(/.+/)) {
+    for (let i = 0; i < inputs.length; i++) 
+    {
+        inputs[i].onkeyup = function () 
+        {
+            if (this.value.match(/.+/)) 
+            {
                 artName = this.value;
             }
         };
@@ -190,12 +209,14 @@ axios.get('/load_canvas')
         preSave(artArray);
         const num_drawn_pixels = artArray.length;
 
-        for (let i = 0; i < num_drawn_pixels; i++) {
+        for (let i = 0; i < num_drawn_pixels; i++) 
+        {
             const x = artArray[i].position[0];
             const y = artArray[i].position[1];
 
             const pixel = document.querySelector(`[data-row="${y}"][data-col="${x}"][class = "pixel"]`);
-            if (pixel) {
+            if (pixel) 
+            {
                 pixel.style.backgroundColor = artArray[i].color;
                 pixel.style.borderColor = artArray[i].color;
             }

@@ -14,6 +14,7 @@ const http = require('http');
 const server = http.createServer(app);
 //initialize a new instance of socket.io by passing the server object
 const { Server } = require("socket.io");
+
 const io = new Server(server, {
   cors: {
       origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -22,6 +23,7 @@ const io = new Server(server, {
   transports: ['websocket', 'polling'],
   allowEIO3: true
 }); // socket instance
+
 const pgSession = require('connect-pg-simple')(session);
 
 // *****************************************************
@@ -49,7 +51,7 @@ const db = pgp(dbConfig);
 //ADDED for GCP
 const { Pool } = require('pg');
 const sessionPool = new Pool(dbConfig);
-//ADDED
+//ADDED for GCP
   
 // test database
 db.connect()
@@ -67,8 +69,7 @@ db.connect()
 
 //only used in login when creating user session
 const user = {
-    username: undefined,
-    password: undefined
+    username: undefined
   };
 
 // Register `hbs` as our view engine using its bound `engine()` function.
@@ -77,7 +78,9 @@ app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.json()); // specify the usage of JSON for parsing request body.
 
-// initialize session variables ALERT: COOKIE COULD BE PROBLEMATIC
+// initialize session variables ALERT: COOKIE COULD BE PROBLEMATIC... AND IT WAS, Hence the following line
+app.set('trust proxy',1); //1 = trust the first hop from proxy
+
 app.use(
   session({
     store: new pgSession({
@@ -113,7 +116,7 @@ app.get("/",(req,res) =>
   }
   else
   {
-    res.render("./pages/login",{});
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
 });
 
@@ -121,11 +124,12 @@ app.get("/homeCanvas", (req, res) =>
 {
   if(req.session.user)
   {
+    console.log("Rendering page");
     res.render("./pages/homeCanvas",{username: req.session.user.username});
   }
   else
   {
-    res.render("./pages/login",{});
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
 
 });
@@ -138,90 +142,96 @@ app.get("/login", (req, res) =>
   }
   else
   {
-    res.render("./pages/login",{});
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
 });
 
 //The following app.get initializes all required items for a canvas to be created
 app.get('/pixel-art', async(req, res) => {
-  const canvasRows = [];
-  const canvasWidth = 32;
-  const canvasHeight = 32;
-  const paletteRows = [];
-  const paletteWidth = 5;
-  const paletteHeight = 5;
-
-  for (let i = 0; i < canvasHeight; i++) {
-    const row = [];
-    for (let j = 0; j < canvasWidth; j++) {
-        row.push({});
-    }
-    canvasRows.push(row);
-  }
-
-  for (let i = 0; i < paletteHeight; i++) {
-    const row = [];
-    for (let j = 0; j < paletteWidth; j++) {
-        row.push({});
-    }
-    paletteRows.push(row);
-  }
-
   if(req.session.user)
   {
+    const canvasRows = [];
+    const canvasWidth = 32;
+    const canvasHeight = 32;
+    const paletteRows = [];
+    const paletteWidth = 5;
+    const paletteHeight = 5;
+
+    for (let i = 0; i < canvasHeight; i++) 
+    {
+      const row = [];
+      for (let j = 0; j < canvasWidth; j++) 
+      {
+        row.push({});
+      }
+      canvasRows.push(row);
+    }
+
+    for (let i = 0; i < paletteHeight; i++) 
+    {
+      const row = [];
+      for (let j = 0; j < paletteWidth; j++) 
+      {
+        row.push({});
+      }
+    paletteRows.push(row);
+    }
     console.log('Rendered: /pixel-art');
 
-      console.dir(paletteHeight,paletteRows,canvasHeight,canvasRows)
-      res.status(200).render('./pages/pixel-art', {
-      title: 'Pixel Art Creator',
-      canvasRows: canvasRows,
-      paletteRows: paletteRows,
-      saved_canvas: req.session.saved_canvas,
-      artwork_id: req.session.artwork_id,
-      artwork_name: req.session.artwork_name,
-      username: req.session.user.username
-  });
+    console.dir(paletteHeight,paletteRows,canvasHeight,canvasRows)
+    res.status(200).render('./pages/pixel-art', {
+    title: 'Pixel Art Creator',
+    canvasRows: canvasRows,
+    paletteRows: paletteRows,
+    saved_canvas: req.session.saved_canvas,
+    artwork_id: req.session.artwork_id,
+    artwork_name: req.session.artwork_name,
+    username: req.session.user.username
+    });
   }
   else
   {
-    res.render("./pages/login",{});
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
-
 });
 
 
-app.post("/login", async(req, res) => 
-{
-const query = "SELECT password FROM users WHERE username = $1"; // Use $1 for the first parameter
-try
-{
-    const results = await db.any(query, [req.body.username]); // Pass parameters as an array preventing SQL injection
-    const match = await bcrypt.compare(req.body.password, results[0].password);
-    
-    if(match === true)
-    {
-      user.password = req.body.password;
-      user.username = req.body.username;
-      req.session.user = user;
-      req.session.save();
-      res.redirect("/homeCanvas");
+app.post("/login", async(req, res) => {
+  const query = "SELECT password FROM users WHERE username = $1"; // Use $1 for the first parameter
+  try
+  {
+      const results = await db.any(query, [req.body.username]); // Pass parameters as an array preventing SQL injection
+      if(results.length == 0)
+      {
+        res.redirect("/register");
+      }
+      else
+      {
+        const match = await bcrypt.compare(req.body.password, results[0].password);
+        if(match === true)
+        {
+          user.username = req.body.username;
+          req.session.user = user;
+          req.session.save();
+          res.redirect("/homeCanvas");
 
-    }
-    else
-    {
-      res.status(400).render("./pages/login",{message:"Incorrect username or password"});
-    }
-}
-catch(err)
-{
+        }
+        else
+        {
+          res.status(400).render("./pages/login",{message:"Incorrect username or password"});
+        }
+      }
+  }
+  catch(err)
+  {
     res.redirect("/register");
     console.log(err);
-}
+  }
 });
 
 app.get("/register", (req, res) => 
 {
-  res.render("./pages/register",{});
+  res.render("./pages/register",{message: "Login or Register To Start Coloring"});
 });
 
 app.post("/register", async (req,res) => {
@@ -232,18 +242,12 @@ app.post("/register", async (req,res) => {
   {
     if(testUsername.length !== 0)
     {
-        await db.any(query, [req.body.username,hash]); //preventing SQL injection
-        
-        user.password = req.body.password;
-        user.username = req.body.username;
-        req.session.user = user;
-        req.session.save();
-        res.redirect("/homeCanvas");
-
-        if(req.body.username == 'John Doe')
-        {
-          db.any("DELETE FROM users WHERE username = 'John Doe';");
-        }
+      await db.any(query, [req.body.username,hash]); //preventing SQL injection
+      
+      user.username = req.body.username;
+      req.session.user = user;
+      req.session.save();
+      res.redirect("/homeCanvas");
     }
     else
     {
@@ -252,7 +256,7 @@ app.post("/register", async (req,res) => {
   }
   catch(err)
   {
-    res.status(400).render("./pages/register",{message: "Username is not valid"});
+    res.status(400).render("./pages/register",{message: "Username: "+ req.body.username + " Is Taken"});
   }
 
 });
@@ -263,48 +267,58 @@ app.post("/register", async (req,res) => {
  * If an artwork created by a user has the same name as another peice of their art, then the previous peice of art will be updated.
  */
 app.post('/save_canvas', async(req, res) => {
-  
-  const removeSpace = req.body.name.replace(/\s/g,"");
-  let saveUser = '';
-  try
+  if(req.session.user)
   {
-    saveUser = req.session.user.username;
-  }
-  catch
-  {
-    res.render("./pages/login",{});
-  }
-  if(saveUser != undefined && removeSpace.length > 0)
-  {
-  const searchForSameName = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = '"+saveUser+"' AND artwork.artwork_name = '"+req.body.name+"';";
-  const countExistingArt = await db.any(searchForSameName);
+    const removeSpace = req.body.name.replace(/\s/g,"");
+    let saveUser = '';
+    try
+    {
+      saveUser = req.session.user.username;
+    }
+    catch
+    {
+      res.render("./pages/login",{message: "Login or Register To Start Coloring"});
+    }
+    if(saveUser != undefined && removeSpace.length > 0)
+    {
+      const searchForSameName = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
+      const countExistingArt = await db.any(searchForSameName,[saveUser,req.body.name]);
 
-  if(countExistingArt[0].count == 1)
-  {
-    const searchForArtId = "select artwork.artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = '"+saveUser+"' AND artwork.artwork_name = '"+req.body.name+"';";
-    const getArtId = await db.any(searchForArtId);
-    const updateExistingQuery = "update artwork set properties = '"+JSON.stringify(req.body.properties)+"' where artwork.artwork_id = "+getArtId[0].artwork_id+";";
-    await db.none(updateExistingQuery);
+      if(countExistingArt[0].count == 1)
+      {
+        const searchForArtId = "select artwork.artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
+        const getArtId = await db.any(searchForArtId,[saveUser,req.body.name]);
+        const updateExistingQuery = "update artwork set properties = $1 where artwork.artwork_id = $2;";
+        
+        await db.none(updateExistingQuery,[JSON.stringify(req.body.properties),getArtId[0].artwork_id]);
+      }
+      else
+      {
+        const query = `
+        INSERT INTO artwork (artwork_name, properties)
+        VALUES ($1, $2);`;
+
+        try 
+        {
+          await db.none(query, [req.body.name, JSON.stringify(req.body.properties)]);
+          const artworkPrimaryKey = 'select Count(*) from artwork;';
+          const countArt = await db.any(artworkPrimaryKey);
+          const addLinkFromUserToArt = "insert into users_to_artwork(username,artwork) values ('"+saveUser+"',"+countArt[0].count+");";
+          await db.none(addLinkFromUserToArt);
+          res.status(204).end();
+        }
+        catch (err) 
+        {
+            res.status(400).end("Error Saving Canvas " + err.message);
+        }
+      }
+    }
   }
   else
   {
-    const query = `
-    INSERT INTO artwork (artwork_name, properties)
-    VALUES ($1, $2);`;
-
-    try {
-        await db.none(query, [req.body.name, JSON.stringify(req.body.properties)]);
-        const artworkPrimaryKey = 'select Count(*) from artwork;';
-        const countArt = await db.any(artworkPrimaryKey);
-        const addLinkFromUserToArt = "insert into users_to_artwork(username,artwork) values ('"+saveUser+"',"+countArt[0].count+");";
-        await db.none(addLinkFromUserToArt);
-        res.status(204).end(); //.end() ends the responce stream, almost self explanitory
-    }
-    catch (err) {
-        res.status(400).end("Error Saving Canvas " + err.message);
-    }
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
-}
+  
 });
 
 app.get('/logout', (req, res) => {
@@ -312,14 +326,13 @@ app.get('/logout', (req, res) => {
   {
     const PastUser = req.session.user.username;
     req.session.destroy( (err) => {
-        res.render('./pages/logout',{Loggedout: PastUser});
-        user.password = undefined;  // reseting pasword feild
-        user.username = undefined;  // reseting username feild
-    });
+      res.render('./pages/logout',{Loggedout: PastUser});
+      user.username = undefined;  // reseting username feild
+    }).catch((err) => {console.log("Error during logout", err)});
   }
   else
   {
-    res.render("./pages/login",{});
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
 });
 /**
@@ -331,8 +344,8 @@ app.post('/save_thumbnail', async(req, res) => {
   let theCountOfSameNameArt = 0;
   try
   {
-    const checkForDuplicates = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = '"+req.session.user.username+"' AND artwork.artwork_name = '"+req.body.theName+"';";
-    const countDuplicates = await db.any(checkForDuplicates);
+    const checkForDuplicates = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
+    const countDuplicates = await db.any(checkForDuplicates,[req.session.user.username,req.body.theName]);
     theCountOfSameNameArt = countDuplicates[0].count
     if(req.session.artwork_id != -1 && theCountOfSameNameArt == 0)
     {
@@ -348,40 +361,40 @@ app.post('/save_thumbnail', async(req, res) => {
     const insertQuery = `
     INSERT INTO artwork (artwork_name, thumbnail)
     VALUES ($1,$2);`;
-    try {
-          await db.none(insertQuery, [req.body.theName, req.body.image]);
-          const getArtworkKey = 'select Count(*) from artwork;';
-          const countArt = await db.any(getArtworkKey);
-          req.session.artwork_id = countArt[0].count;
-          const insertUserToArt = "insert into users_to_artwork(username,artwork) values ('"+req.session.user.username+"',"+countArt[0].count+");";
-          await db.none(insertUserToArt);
+    try 
+    {
+      await db.none(insertQuery, [req.body.theName, req.body.image]);
+      const getArtworkKey = 'select Count(*) from artwork;';
+      const countArt = await db.any(getArtworkKey);
+      req.session.artwork_id = countArt[0].count;
+      const insertUserToArt = "insert into users_to_artwork(username,artwork) values ('"+req.session.user.username+"',"+countArt[0].count+");";
+      await db.none(insertUserToArt);
     }
-    catch (err) {
-        res.status(400).end("Error Saving Thumbnail "+ err.message);
+    catch (err) 
+    {
+      res.status(400).end("Error Saving Thumbnail "+ err.message);
     }
   }
   else
   {
     if(req.session.artwork_id == -1 && theCountOfSameNameArt != 0)
     {
-      const findId = "select artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = '"+req.session.user.username+"' AND artwork.artwork_name = '"+req.body.theName+"';";
-      const lookForId = await db.any(findId);
+      const findId = "select artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
+      const lookForId = await db.any(findId,[req.session.user.username,req.body.theName]);
       req.session.artwork_id = lookForId[0].artwork_id;
     }
-    const query = `
-    UPDATE artwork
-    SET thumbnail = '${req.body.image}'
-    WHERE artwork_id = ${req.session.artwork_id};
-  `;
+    const query = `UPDATE artwork SET thumbnail = $1 WHERE artwork_id = $2;`;
 
-  try {
-    await db.none(query);
-    res.status(201).end();
-  }
-  catch (err) {
-    console.log(err);
-    res.status(400).end("Error Saving Thumbnail " + err.message);
-  }   
+    try 
+    {
+      await db.none(query,[req.body.image,req.session.artwork_id]);
+      res.status(201).end();
+    }
+    catch (err) 
+    {
+      console.log(err);
+      res.status(400).end("Error Saving Thumbnail " + err.message);
+    }   
   }
 });
     
@@ -391,56 +404,59 @@ app.post('/save_thumbnail', async(req, res) => {
  * that to pixel-art.hbs
  */
 app.post("/canvas", async(req, res) => {
-  if(req.session.user) // change to req.session.user on production version
-    {
-      req.session.saved_canvas = false;
-      req.session.artwork_id = -1;
-      req.session.artwork_name = "";
+  if(req.session.user)
+  {
+    req.session.saved_canvas = false;
+    req.session.artwork_id = -1;
+    req.session.artwork_name = "";
 
-      const roomId = await req.body.roomInput;
-      req.body.roomInput = '';
-      const canvasRows = [];
-      const canvasWidth = 32;
-      const canvasHeight = 32;
-      const paletteRows = [];
-      const paletteWidth = 5;
-      const paletteHeight = 5;
-    
-      for (let i = 0; i < canvasHeight; i++) {
-        const row = [];
-        for (let j = 0; j < canvasWidth; j++) {
-            row.push({});
-        }
-        canvasRows.push(row);
-      }
-    
-      for (let i = 0; i < paletteHeight; i++) {
-        const row = [];
-        for (let j = 0; j < paletteWidth; j++) {
-            row.push({});
-        }
-        paletteRows.push(row);
-      }
-      //SETTING UP CANVAS
-        console.log('Rendered: /pixel-art');
-    
-          console.dir(paletteHeight,paletteRows,canvasHeight,canvasRows)
-          res.render('./pages/pixel-art', {
-          title: 'Pixel Art Creator',
-          canvasRows: canvasRows,
-          paletteRows: paletteRows,
-          saved_canvas: req.session.saved_canvas,
-          artwork_id: req.session.artwork_id,
-          artwork_name: req.session.artwork_name,
-          username: req.session.user.username,
-          canvasNumber: roomId
-      });
-      // when entering a room, the new websocket either should create a now room or get updated on all changes in existing room
-    }
-    else
+    const roomId = await req.body.roomInput;
+    req.body.roomInput = '';
+    const canvasRows = [];
+    const canvasWidth = 32;
+    const canvasHeight = 32;
+    const paletteRows = [];
+    const paletteWidth = 5;
+    const paletteHeight = 5;
+
+    for (let i = 0; i < canvasHeight; i++) 
     {
-      res.render("./pages/login",{});
+      const row = [];
+      for (let j = 0; j < canvasWidth; j++) 
+      {
+        row.push({});
+      }
+      canvasRows.push(row);
     }
+
+    for (let i = 0; i < paletteHeight; i++) 
+    {
+      const row = [];
+      for (let j = 0; j < paletteWidth; j++) 
+        {
+          row.push({});
+        }
+      paletteRows.push(row);
+    }
+
+    //SETTING UP CANVAS
+      console.log('Rendered: /pixel-art');
+  
+      res.render('./pages/pixel-art', {
+      title: 'Pixel Art Creator',
+      canvasRows: canvasRows,
+      paletteRows: paletteRows,
+      saved_canvas: req.session.saved_canvas,
+      artwork_id: req.session.artwork_id,
+      artwork_name: req.session.artwork_name,
+      username: req.session.user.username,
+      canvasNumber: roomId
+      });
+  }
+  else
+  {
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
+  }
 });
 
 // *****************************************************
@@ -448,59 +464,73 @@ app.post("/canvas", async(req, res) => {
 // *****************************************************
 
 const auth = (req, res, next) => {
-  if (!req.session.user) {
-    // Default to login page.
-    return res.redirect('/login');
+  if (!req.session.user) 
+  {
+  // Default to login page.
+  return res.redirect('/login');
   }
   next();
 };
+
 app.use(auth);
 /**
  * Private Gallary will get all artworks pertaining to the logged-in user from the artwork table and send them in a list to privateGallery.hbs page
  */
 app.get('/private_gallery', async (req, res) => {
+  if(req.session.user)
+  {
     const COLS_PER_ROW = 3;
     const query = `
         WITH user_artwork_ids AS (
           SELECT artwork FROM users_to_artwork
-          WHERE username = '${req.session.user.username}'
+          WHERE username = $1
         )
         SELECT * 
         FROM artwork INNER JOIN user_artwork_ids
         ON artwork.artwork_id = user_artwork_ids.artwork;
-    `;
+      `;
     
-    try {
-        const results = await db.any(query);
+    try 
+    {
+        const results = await db.any(query,[req.session.user.username]);
         const num_rows = Math.floor(results.length / COLS_PER_ROW) + 1;
         const split_results = [];
-        for (let i = 0; i < num_rows; i++) {
-            split_results[i] = results.slice(i * COLS_PER_ROW, i * COLS_PER_ROW + COLS_PER_ROW);
+        for (let i = 0; i < num_rows; i++) 
+        {
+          split_results[i] = results.slice(i * COLS_PER_ROW, i * COLS_PER_ROW + COLS_PER_ROW);
         }   
         res.status(200).render('./pages/privateGallery.hbs', {
-            artworks: split_results,
-            username: req.session.user.username
+          artworks: split_results,
+          username: req.session.user.username
         });
     }
-    catch (err) {
-        res.status(404).render('./pages/privateGallery.hbs', {
-            artworks: [],
-            username: req.session.user.username
-        });
+    catch (err) 
+    {
+      res.status(404).render('./pages/privateGallery.hbs', {
+        artworks: [],
+        username: req.session.user.username
+      });
     }
+  }
+  else
+  {
+    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
+  }
 });
 
 app.post('/load_canvas', (req, res) => {
 
-  if ("new_canvas" in req.body) {
-      req.session.saved_canvas = false;
-      req.session.artwork_id = -1;
-      req.session.artwork_name = "";
+  if ("new_canvas" in req.body) 
+  {
+    req.session.saved_canvas = false;
+    req.session.artwork_id = -1;
+    req.session.artwork_name = "";
   }
-  else {
-      req.session.saved_canvas = true;
-      req.session.artwork_id = req.body.artwork_id;
-      req.session.artwork_name = req.body.artwork_name;
+  else 
+  {
+    req.session.saved_canvas = true;
+    req.session.artwork_id = req.body.artwork_id;
+    req.session.artwork_name = req.body.artwork_name;
   }
 
   res.status(200).redirect('/pixel-art')
@@ -509,11 +539,11 @@ app.post('/load_canvas', (req, res) => {
 // This will then be sent to the front end to load the canvas.
 app.get('/load_canvas', async (req, res) => {
   if(req.session.artwork_id != -1)
-    {
+  {
       const query = `
       WITH user_artwork_ids AS (
         SELECT artwork FROM users_to_artwork
-        WHERE username = '${req.session.user.username}'
+        WHERE username = $1
       ),
       user_artworks AS (
         SELECT * 
@@ -521,21 +551,23 @@ app.get('/load_canvas', async (req, res) => {
         ON artwork.artwork_id = user_artwork_ids.artwork
       )
       SELECT * FROM user_artworks
-      WHERE user_artworks.artwork_id = '${req.session.artwork_id}';
-  `;
+      WHERE user_artworks.artwork_id = $2;
+    `;
 
-  try {
-      const result = await db.one(query);
+    try 
+    {
+      const result = await db.one(query,[req.session.user.username,req.session.artwork_id]);
       if(result.artwork_id != -1)
         {
-                console.dir(result, {depth: null});
-                res.status(200).send(result);
+          console.dir(result, {depth: null});
+          res.status(200).send(result);
         }
-  }
-  catch (err) {
-      res.status(400).end("Error Loading Canvas " + err.message);
-  }
     }
+    catch (err) 
+    {
+      res.status(400).end("Error Loading Canvas " + err.message);
+    }
+  }
 });
 
 const rooms = new Map();
@@ -553,13 +585,12 @@ function roomOrganizer(socket,roomName)
     for (const socketIn of socketsToRooms.get(roomName))
       {
         if(socketIn !== socket.id)
-          {
-            sockets.push(socketIn);
-          }
+        {
+          sockets.push(socketIn);
+        }
       }
     if(sockets.length === 0)
     {
-
       socketsToRooms.delete(roomName);
       rooms.delete(roomName);
       return true;
@@ -571,8 +602,8 @@ function roomOrganizer(socket,roomName)
     return false;
   }
 }
-//This server side code will proccess the transmitted information from the client side and then broadcast the information out to the appropriate websockets
 
+//This server side code will proccess the transmitted information from the client side and then broadcast the information out to the appropriate websockets
 function designateRoom(socket, newRoom) 
 {
   console.log("Socket ID: " + socket.id + " Is In Room:" + newRoom);
@@ -591,53 +622,54 @@ function designateRoom(socket, newRoom)
 
   const roomData = rooms.get(newRoom);
 
-  if (roomData) {
+  if (roomData) 
+  {
     console.log("updating room");
     io.to(socket.id).emit("update all", roomData);
-  } else {
+  } else 
+  {
     console.warn(`Attempted to send 'update all' for room '${newRoom}' but no data found in 'rooms' map.`);
   }
 }
 
 
-io.on('connection', (socket) => 
-  {
-    console.log('User connected');
-    // health ping pong
-    socket.on('ping', () => {
-      socket.emit('pong');
-    });
+io.on('connection', (socket) => {
+  console.log('User connected');
+  // health ping pong
+  socket.on('ping', () => {
+    socket.emit('pong');
+  });
 
-    // boradcasting update to the room/s that the socket is in. However sockets will only ever be in one room
-    socket.on('update', (row, col, chosen_color, canvasHeight, canvasWidth) => {
-        for(const roomName of socket.rooms)
+  // boradcasting update to the room/s that the socket is in. However sockets will only ever be in one room
+  socket.on('update', (row, col, chosen_color, canvasHeight, canvasWidth) => {
+      for(const roomName of socket.rooms)
+      {
+        if(roomName !== socket.id)
         {
-          if(roomName !== socket.id)
+          console.log(`painting in room ${roomName}`, row, col,chosen_color);
+          if(!rooms.has(roomName))
           {
-            console.log(`painting in room ${roomName}`, row, col,chosen_color);
-            if(!rooms.has(roomName))
-            {
-              const canvasData = [];
-              for (let i = 0; i < canvasHeight; i++) {
-                  const row = [];
-                  for (let j = 0; j < canvasWidth; j++) {
-                      row.push(0); // 0 means white/empty, 1 means black/filled
-                  }
-                  canvasData.push(row);
-              }
-              canvasData[row][col] = chosen_color;
-              rooms.set(roomName,canvasData);
-              io.to(roomName).emit("update", row, col, chosen_color);  //broadcasting message to everyone in room
+            const canvasData = [];
+            for (let i = 0; i < canvasHeight; i++) {
+                const row = [];
+                for (let j = 0; j < canvasWidth; j++) {
+                    row.push(0); // 0 means white/empty, 1 means black/filled
+                }
+                canvasData.push(row);
             }
-            else
-            {
-                rooms.get(roomName)[row][col] = chosen_color  //adding message to record
-                io.to(roomName).emit("update", row, col, chosen_color);  //broadcasting message to everyone in room
-            }
-            break;
+            canvasData[row][col] = chosen_color;
+            rooms.set(roomName,canvasData);
+            io.to(roomName).emit("update", row, col, chosen_color);  //broadcasting message to everyone in room
           }
-          
+          else
+          {
+              rooms.get(roomName)[row][col] = chosen_color  //adding message to record
+              io.to(roomName).emit("update", row, col, chosen_color);  //broadcasting message to everyone in room
+          }
+          break;
         }
+        
+      }
     });
 
     socket.on('joinRoom', (roomId) => {
@@ -647,13 +679,13 @@ io.on('connection', (socket) =>
     // on disconnection of websocket roomOrganizer will delete any rooms/saved information about rooms that are now vacant
     socket.on("disconnecting", () => {
     for(const roomName of socket.rooms)
+    {
+      if(socket.id != roomName)
       {
-        if(socket.id != roomName)
-        {
-          roomOrganizer(socket,roomName);
-        }
+        roomOrganizer(socket,roomName);
       }
-      console.log('User disconnected')
+    }
+    console.log('User disconnected')
     });
 
   });
