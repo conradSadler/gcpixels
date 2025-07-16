@@ -6,15 +6,37 @@
       font-family: 'Press Start 2P', sans-serif !important;
       padding-left: 1rem;
       padding-right: 1rem;
-       button {
-        padding: 8px 16px;
-        margin: 0 5px;
-        background-color: #5822d4;
-        color: rgb(255, 255, 255);
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
     }
+    button {
+      padding: 8px 16px;
+      margin: 0 5px;
+      background-color: #5822d4;
+      color: rgb(255, 255, 255);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  .loader {
+      border: 5px solid rgb(255, 255, 255);
+      border-radius: 50%;
+      border-top: 5px solid #5822d4;
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      min-height: 20px;
+      -webkit-animation: spin 2s linear infinite;
+      animation: spin 2s linear infinite;
+      display:none;
+      }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+      }
+        
+    @-webkit-keyframes spin {
+      0% { -webkit-transform: rotate(0deg); }
+      100% { -webkit-transform: rotate(360deg); }
+      }
   </style>
 
   <div class="row">
@@ -40,6 +62,7 @@
         <div class="d-flex align-items-center gap-3 pb-2">
           <button id="clear-btn">Clear Canvas</button>
           <button id="save-btn" type="submit">Save Art</button>
+          <div class="loader"></div>
         </div>
       </div>
     </div>
