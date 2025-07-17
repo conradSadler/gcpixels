@@ -44,8 +44,8 @@
           <!-- Room Join Form -->
           <form method="post" action="/canvas" class="form-inline" id="roomForm">
             <div class="form-group" id="roomArea">
-              <label for="roomInput" class="form-label" style="color: rgb(255, 255, 255)">Join Canvas:</label>
-              <input type="text" name="roomInput" class="form-control form-control-sm" placeholder="#..." id="roomInput">
+              <label for="roomInput" class="form-label" style="color: rgb(255, 255, 255)">Shared Canvas:</label>
+              <input type="text" name="roomInput" class="form-control form-control-sm" placeholder="#..." id="roomInput" maxlength="28">
               <input name="artwork_id" type="hidden" value="{{-3}}">
               <button type="submit" class="btn-sm">Join</button>
             </div>
@@ -61,7 +61,7 @@
                 {{username}}
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="/private_gallery">Private Gallery</a></li>
+                <li><a class="dropdown-item" id="privateGalleryButton" href="/private_gallery">Private Gallery</a></li>
                 <li><a class="dropdown-item" href="/logout">Logout</a></li>
               </ul>
             </li>

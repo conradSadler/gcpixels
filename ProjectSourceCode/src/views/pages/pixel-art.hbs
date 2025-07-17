@@ -42,7 +42,7 @@
   <div class="row">
     {{#if canvasNumber}}
       <div>
-        <label for="roomInput" class="form-label">Exclusive_Canvas: {{canvasNumber}}</label>
+        <label for="roomInput" class="form-label">Shared_Canvas: {{canvasNumber}}</label>
         <input type="hidden" id="roomid" value="{{canvasNumber}}">
       </div>
     {{/if}}
@@ -53,9 +53,9 @@
         <form class="pb-2">
         {{!-- {{ The following input has a script that prevents the enter button(keyCode = 13) from being pressed }} --}}
         {{#if saved_canvas}}
-           <input name="artworkName" id = "theName" value="{{artwork_name}}" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}">
+           <input name="artworkName" id = "theName" value="{{artwork_name}}" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}" maxlength="28">
         {{else}}
-          <input name="artworkName" placeholder="Untitled Artwork" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}">
+          <input name="artworkName" placeholder="Untitled Artwork" font-family="'Press Start 2P', sans-serif !important;" onkeydown="if(event.keyCode === 13) {event.preventDefault()}" maxlength="28">
         {{/if}}
         </form>
 

@@ -366,14 +366,7 @@ app.get('/logout', (req, res) => {
   {
     res.render("./pages/login",{message: "Login or Register To Start Coloring"});
   }
-});
-/**
- * /save_thumbnail will update the thumbnail column of the artwork table with the new thumbnail if the artwork exists. 
- * If it does not exist, then a new entry with the artwork name will be added to the artwork table along with a new enrty 
- * into the linking table users_to_artwork.
- */
-
-    
+});   
 
 /**
  * If a user enters an exclusive canvas then /canvas will create the nessesary items for a collaborative canvas and send 
@@ -452,45 +445,48 @@ app.use(auth);
  * Private Gallary will get all artworks pertaining to the logged-in user from the artwork table and send them in a list to privateGallery.hbs page
  */
 app.get('/private_gallery', async (req, res) => {
-  if(req.session.user)
-  {
-    const COLS_PER_ROW = 3;
-    const query = `
-        WITH user_artwork_ids AS (
-          SELECT artwork FROM users_to_artwork
-          WHERE username = $1
-        )
-        SELECT artwork_id, artwork_name, properties, thumbnail 
-        FROM artwork INNER JOIN user_artwork_ids
-        ON artwork.artwork_id = user_artwork_ids.artwork;
-      `;
-    
-    try 
+  //added wait time so that autosaved canvases would appear
+  setTimeout(async() => {
+    if(req.session.user)
     {
-        const results = await db.any(query,[req.session.user.username]);
-        const num_rows = Math.floor(results.length / COLS_PER_ROW) + 1;
-        const split_results = [];
-        for (let i = 0; i < num_rows; i++) 
-        {
-          split_results[i] = results.slice(i * COLS_PER_ROW, i * COLS_PER_ROW + COLS_PER_ROW);
-        }   
-        res.status(200).render('./pages/privateGallery.hbs', {
-          artworks: split_results,
+      const COLS_PER_ROW = 3;
+      const query = `
+          WITH user_artwork_ids AS (
+            SELECT artwork FROM users_to_artwork
+            WHERE username = $1
+          )
+          SELECT artwork_id, artwork_name, properties, thumbnail 
+          FROM artwork INNER JOIN user_artwork_ids
+          ON artwork.artwork_id = user_artwork_ids.artwork;
+        `;
+      
+      try 
+      {
+          const results = await db.any(query,[req.session.user.username]);
+          const num_rows = Math.floor(results.length / COLS_PER_ROW) + 1;
+          const split_results = [];
+          for (let i = 0; i < num_rows; i++) 
+          {
+            split_results[i] = results.slice(i * COLS_PER_ROW, i * COLS_PER_ROW + COLS_PER_ROW);
+          }   
+          res.status(200).render('./pages/privateGallery.hbs', {
+            artworks: split_results,
+            username: req.session.user.username
+          });
+      }
+      catch (err) 
+      {
+        res.status(404).render('./pages/privateGallery.hbs', {
+          artworks: [],
           username: req.session.user.username
         });
+      }
     }
-    catch (err) 
+    else
     {
-      res.status(404).render('./pages/privateGallery.hbs', {
-        artworks: [],
-        username: req.session.user.username
-      });
+      res.render("./pages/login",{message: "Login or Register To Start Coloring"});
     }
-  }
-  else
-  {
-    res.render("./pages/login",{message: "Login or Register To Start Coloring"});
-  }
+  },500);
 });
 
 app.post('/load_canvas', (req, res) => {
@@ -510,6 +506,7 @@ app.post('/load_canvas', (req, res) => {
 
   res.status(200).redirect('/pixel-art')
 });
+
 // get('/load_canvas') will search for artwork by name and artwork id from the artworks table in users_db. 
 // This will then be sent to the front end to load the canvas.
 app.get('/load_canvas', async (req, res) => {
@@ -650,6 +647,7 @@ io.on('connection', (socket) => {
       console.log(`Socket ${socket.id} requested to join room: ${roomId}`);
       designateRoom(socket, roomId);
     });
+
     // on disconnection of websocket roomOrganizer will delete any rooms/saved information about rooms that are now vacant
     socket.on("disconnecting", () => {
     for(const roomName of socket.rooms)
