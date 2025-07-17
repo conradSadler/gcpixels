@@ -208,9 +208,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    //auto save so art work is not lost
-    window.addEventListener("beforeunload", async() => {
-        await SaveArt(null);
+    //auto save so art work is not lost ON DESKTOP ONLY
+    window.addEventListener('pagehide', (event) => {
+        SaveArt(null);
+    });
+    window.addEventListener("beforeunload", (event) => {
+        SaveArt(null);
     });
 
     //loads canvas from artArray from server
