@@ -270,48 +270,80 @@ app.post('/save_canvas', async(req, res) => {
   if(req.session.user)
   {
     const removeSpace = req.body.name.replace(/\s/g,"");
-    let saveUser = '';
-    try
-    {
-      saveUser = req.session.user.username;
-    }
-    catch
-    {
-      res.render("./pages/login",{message: "Login or Register To Start Coloring"});
-    }
-    if(saveUser != undefined && removeSpace.length > 0)
-    {
-      const searchForSameName = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
-      const countExistingArt = await db.any(searchForSameName,[saveUser,req.body.name]);
+    let saveUser = req.session.user.username;
 
-      if(countExistingArt[0].count == 1)
+    if(removeSpace.length > 0)
+    {
+      let lookForId= [];
+      try
       {
-        const searchForArtId = "select artwork.artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
-        const getArtId = await db.any(searchForArtId,[saveUser,req.body.name]);
-        const updateExistingQuery = "update artwork set properties = $1 where artwork.artwork_id = $2;";
-        
-        await db.none(updateExistingQuery,[JSON.stringify(req.body.properties),getArtId[0].artwork_id]);
+        const findId = "select artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on users_to_artwork.artwork = artwork.artwork_id where users.username = $1 AND artwork.private_name = $2;";
+        lookForId = await db.any(findId,[saveUser,(req.body.name+saveUser)]);
       }
-      else
+      catch(err)
       {
-        const query = `
-        INSERT INTO artwork (artwork_name, properties)
-        VALUES ($1, $2);`;
+        console.log("Error in looking for artwork ", err);
+      }
+
+      if(lookForId[0] == undefined)
+      {
+        let query = '';
 
         try 
         {
-          await db.none(query, [req.body.name, JSON.stringify(req.body.properties)]);
-          const artworkPrimaryKey = 'select Count(*) from artwork;';
-          const countArt = await db.any(artworkPrimaryKey);
-          const addLinkFromUserToArt = "insert into users_to_artwork(username,artwork) values ('"+saveUser+"',"+countArt[0].count+");";
-          await db.none(addLinkFromUserToArt);
-          res.status(204).end();
+          if(req.body.image == null)
+          {
+            query = `
+            INSERT INTO artwork (artwork_name, private_name, properties)
+            VALUES ($1, $2, $3);`;
+            await db.none(query, [req.body.name,(req.body.name + saveUser), JSON.stringify(req.body.properties)]);
+            console.log(query, [req.body.name,(req.body.name + saveUser), JSON.stringify(req.body.properties)]);
+          }
+          else
+          {
+            query = `
+            INSERT INTO artwork (artwork_name, private_name, properties,thumbnail)
+            VALUES ($1, $2, $3, $4);`;
+            await db.none(query, [req.body.name,(req.body.name + saveUser), JSON.stringify(req.body.properties),req.body.image]);
+            console.log(query, [req.body.name,(req.body.name + saveUser), JSON.stringify(req.body.properties),req.body.image]);
+          }
+          const findNewId = "SELECT artwork_id FROM artwork WHERE artwork.private_name = $1;";
+          const newArtwork = await db.any(findNewId, [(req.body.name + saveUser)]);
+          const addLinkFromUserToArt = "INSERT INTO users_to_artwork(username, artwork) VALUES ($1, $2);";
+          await db.none(addLinkFromUserToArt, [saveUser, newArtwork[0].artwork_id]);
         }
         catch (err) 
         {
-            res.status(400).end("Error Saving Canvas " + err.message);
+          console.log("Error with run condition updating canvas:",err);
+        }
+        res.status(204).end()
+      }
+      else
+      {
+        try
+        {
+          let updateExistingQuery = '';
+          if(req.body.image == null)
+          {
+            updateExistingQuery = `update artwork set properties = $1 where artwork.private_name = $2;`;
+            await db.none(updateExistingQuery,[JSON.stringify(req.body.properties),(req.body.name+saveUser)]);
+          }
+          else
+          {
+            updateExistingQuery = `update artwork set properties = $1, thumbnail = $2 where artwork.private_name= $3;`;
+            await db.none(updateExistingQuery,[JSON.stringify(req.body.properties),req.body.image,(req.body.name+saveUser)]);
+          }
+          res.status(204).end()
+        }
+        catch(err)
+        {
+          console.log("Error updating existing canvas:",err);
         }
       }
+    }
+    else
+    {
+      res.send("Invalid name");
     }
   }
   else
@@ -340,63 +372,7 @@ app.get('/logout', (req, res) => {
  * If it does not exist, then a new entry with the artwork name will be added to the artwork table along with a new enrty 
  * into the linking table users_to_artwork.
  */
-app.post('/save_thumbnail', async(req, res) => {
-  let theCountOfSameNameArt = 0;
-  try
-  {
-    const checkForDuplicates = "select Count(*) from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
-    const countDuplicates = await db.any(checkForDuplicates,[req.session.user.username,req.body.theName]);
-    theCountOfSameNameArt = countDuplicates[0].count
-    if(req.session.artwork_id != -1 && theCountOfSameNameArt == 0)
-    {
-      req.session.artwork_id = -1;
-    }
-  }
-  catch(err)
-  {
-    res.status(400).end("Error Saving Thumbnail " + err.message);
-  }
-  if(req.session.artwork_id == -1 && theCountOfSameNameArt == 0)
-  {
-    const insertQuery = `
-    INSERT INTO artwork (artwork_name, thumbnail)
-    VALUES ($1,$2);`;
-    try 
-    {
-      await db.none(insertQuery, [req.body.theName, req.body.image]);
-      const getArtworkKey = 'select Count(*) from artwork;';
-      const countArt = await db.any(getArtworkKey);
-      req.session.artwork_id = countArt[0].count;
-      const insertUserToArt = "insert into users_to_artwork(username,artwork) values ('"+req.session.user.username+"',"+countArt[0].count+");";
-      await db.none(insertUserToArt);
-    }
-    catch (err) 
-    {
-      res.status(400).end("Error Saving Thumbnail "+ err.message);
-    }
-  }
-  else
-  {
-    if(req.session.artwork_id == -1 && theCountOfSameNameArt != 0)
-    {
-      const findId = "select artwork_id from users left join users_to_artwork on users.username = users_to_artwork.username left join artwork on artwork = artwork.artwork_id where users.username = $1 AND artwork.artwork_name = $2;";
-      const lookForId = await db.any(findId,[req.session.user.username,req.body.theName]);
-      req.session.artwork_id = lookForId[0].artwork_id;
-    }
-    const query = `UPDATE artwork SET thumbnail = $1 WHERE artwork_id = $2;`;
 
-    try 
-    {
-      await db.none(query,[req.body.image,req.session.artwork_id]);
-      res.status(201).end();
-    }
-    catch (err) 
-    {
-      console.log(err);
-      res.status(400).end("Error Saving Thumbnail " + err.message);
-    }   
-  }
-});
     
 
 /**
@@ -484,7 +460,7 @@ app.get('/private_gallery', async (req, res) => {
           SELECT artwork FROM users_to_artwork
           WHERE username = $1
         )
-        SELECT * 
+        SELECT artwork_id, artwork_name, properties, thumbnail 
         FROM artwork INNER JOIN user_artwork_ids
         ON artwork.artwork_id = user_artwork_ids.artwork;
       `;

@@ -13,7 +13,10 @@ Also refrence index.js create account section to see how to send sql query to in
 
 
 to inspect tables run the following lines:
-
+ALTER TABLE artwork
+ALTER COLUMN artwork_name SET NOT NULL;
+ALTER TABLE artwork
+ADD CONSTRAINT UQ_artwork_name_per_user UNIQUE (username, artwork_name);
 docker compose exec db psql -U postgres
 \l
 \c users_db

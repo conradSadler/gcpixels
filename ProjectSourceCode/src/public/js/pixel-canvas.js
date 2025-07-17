@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
        canvasData.push(row);
    }
 
-
    // Add event listeners to pixels
    const pixels = document.querySelectorAll('.pixel');
    for (const pixel of pixels) {
@@ -30,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
            socket.emit('update', row, col, chosen_color, canvasHeight, canvasWidth);
        });
    }
-
 
    // Clear button functionality
    const clearBtn = document.getElementById('clear-btn');
@@ -55,14 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
        });
    }
 
-
    function preSave(artArray)
    {
        artwork_data = artArray;
    }
 
-
-   async function SaveArt()
+   async function SaveArt(image)
    {
        if (artName == '')
        {
@@ -94,28 +90,25 @@ document.addEventListener('DOMContentLoaded', () => {
                    }
                }
            }
-
-
-           await axios.post('/save_canvas', {
-           name: `${artName}`,
-           properties: {
-               width: canvasWidth,
-               height: canvasHeight,
-               artArray: artwork_data
-           }
-           });
+            await axios.post('/save_canvas', {
+            name: `${artName}`,
+                properties: {
+                    width: canvasWidth,
+                    height: canvasHeight,
+                    artArray: artwork_data
+                },
+                image: image
+            });
            return true;
        }
       
    }
-
 
    // Save button functionality
    const saveBtn = document.getElementById('save-btn');
    if (saveBtn)
    {
        saveBtn.addEventListener('click', async() => {
-           saveBtn.disabled = true;
            if (artName == '')
            {
                try
@@ -131,35 +124,24 @@ document.addEventListener('DOMContentLoaded', () => {
                    alert("Name Your Artwork Before Saving");
                }
            }
+           
            if(artName != '')
            {
+               saveBtn.disabled = true;
                document.querySelector('.loader').style.display = 'block';
                setTimeout(async() => {
                    const node = document.getElementById('canvas-container');
-                   await htmlToImage.toPng(node, {canvasWidth: 200, canvasHeight: 200, quality: .7, pixelRatio: 1})
-                   .then((dataURL) => {
-                       axios.post('/save_thumbnail', {
-                       image: dataURL,
-                       theName: artName
-                       })
-                       .then((res) => {
-                           console.log(res);
-                       })
-                       .catch((err) => {
-                           console.log(err);  
-                       });
-                       })
+                   const dataURL = await htmlToImage.toPng(node, {canvasWidth: 200, canvasHeight: 200, quality: .7, pixelRatio: 1})
                    .catch((err) => {
                        console.log(err);
                    });
                    document.querySelector('.loader').style.display = 'none';
                    saveBtn.disabled = false;
-                   await SaveArt();
+                   await SaveArt(dataURL);
                }, 20);
            }
        });
    }
-
 
    socket.on('update', function(row, col, chosen_color) {
        const pixels = document.querySelectorAll('.pixel');
@@ -173,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
            }
        }
    });
-
 
    socket.on('update all', function(historyArray) {
        const rowLen = historyArray.length;
@@ -197,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
        }
    });
 
-
    let inputs = document.getElementsByName("artworkName");
    for (let i = 0; i < inputs.length; i++)
    {
@@ -210,11 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
        };
    }
 
-
    window.addEventListener("beforeunload", async() => {
-       await SaveArt();
+        await SaveArt(null);
    });
-
 
 // This part was outside the DOMContentLoaded block — moved it in here
 axios.get('/load_canvas')
@@ -245,7 +223,6 @@ axios.get('/load_canvas')
        console.log(err);
    });
 });
-
 
 try
 {
